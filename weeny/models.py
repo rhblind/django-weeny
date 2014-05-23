@@ -4,15 +4,19 @@ from __future__ import unicode_literals
 
 import random
 
+from user_agents.parsers import parse as ua_parse
+
 from django.db import models
-from django.db.models import signals, permalink
+from django.db.models import signals
 from django.core.exceptions import ValidationError
+from django.contrib.auth.hashers import make_password
 from django.contrib.sites.models import Site
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
+from weeny.signals import track_visit
 
 # A constant holding all base62 valid digits
 BASE62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -36,9 +40,10 @@ class WeenySite(models.Model):
     site = models.ForeignKey(Site)
     short_domain = models.CharField(verbose_name=_("short domain name"), max_length=50)
     protocol = models.CharField(max_length=10, choices=TRANSFER_PROTOCOL, default="https")
+    track = models.BooleanField(default=False, help_text=_("Track all URL's for this site."))
     seed = models.CharField(max_length=62, blank=True, db_index=True, unique=True)
     created = models.DateTimeField(auto_now_add=True, verbose_name=_("date/time created"))
-    updated = models.DateTimeField(auto_now=True, verbose_name=_("date/time updated"))
+    modified = models.DateTimeField(auto_now=True, verbose_name=_("date/time modified"))
 
     class Meta:
         unique_together = ["site", "short_domain"]
@@ -61,6 +66,12 @@ class WeenyURL(models.Model):
     any model. Requires that the `content_object` to have a
     `get_absolute_url` method implemented.
     """
+    MODERATION = (
+        ("approved", "Approved"),
+        ("banned", "Banned"),
+        ("pending", "Pending"),
+        ("refused", "Refused")
+    )
 
     content_type = models.ForeignKey(ContentType, verbose_name=_("content type"),
                                      related_name="contenttype_set_for_%(class)s")
@@ -70,8 +81,16 @@ class WeenyURL(models.Model):
     urlcode = models.CharField(max_length=10, db_index=True, blank=True, verbose_name=_("URL code"),
                                help_text=_("This code will be appended to the weeny domain to "
                                            "create the shortened url."))
+    track = models.BooleanField(default=False, help_text=_("Check to track visits to this URL."))
+    allow_revisit = models.BooleanField(default=True, help_text=_("Check to allow URL to be used multiple times"))
+    is_active = models.BooleanField(default=True, verbose_name=_("active"), help_text=_("Check to activate the URL."))
+    is_visited = models.BooleanField(default=False, verbose_name=_("visited"))
+    is_private = models.BooleanField(default=False, verbose_name=_("private URL"),
+                                     help_text=_("Check this if you want the URL to be password protected."))
+    password = models.CharField(max_length=128, blank=True, null=True,
+                                help_text=_("Only required if private URL."))
     created = models.DateTimeField(auto_now_add=True, verbose_name=_("date/time created"))
-    updated = models.DateTimeField(auto_now=True, verbose_name=_("date/time updated"))
+    modified = models.DateTimeField(auto_now=True, verbose_name=_("date/time modified"))
 
     class Meta:
         ordering = ["weeny_site"]
@@ -79,6 +98,10 @@ class WeenyURL(models.Model):
 
     def __unicode__(self):
         return "{obj} - {code}".format(obj=self.content_object, code=self.urlcode)
+
+    def get_absolute_url(self):
+        from django.core.urlresolvers import reverse_lazy
+        return reverse_lazy("weeny_urlredirect_view", kwargs={"urlcode": self.urlcode})
 
     @property
     def redirect_url(self):
@@ -95,6 +118,62 @@ class WeenyURL(models.Model):
                 "all target objects needs to have a resolvable url. Please implement a `get_absolute_url`"
                 "method on %(cls)r in order to target this object." % {"cls": self.content_object.__class__}
             ))
+
+        if self.is_private:
+            if not self.password:
+                raise ValidationError(_("Private URL's needs a password!"))
+            self.password = make_password(self.password)
+
+        if self.password and not self.is_private:
+            raise ValidationError(_("You can't set password on public URL's!"))
+
+
+class UserAgent(models.Model):
+    """
+    Keep track of user agents.
+    """
+
+    ua_string = models.TextField(verbose_name=_("user agent string"))
+    browser_family = models.CharField(max_length=50)
+    browser_version = models.CharField(max_length=20)
+    device_family = models.CharField(max_length=50)
+    os_family = models.CharField(max_length=50, verbose_name=_("OS family"))
+    os_version = models.CharField(max_length=20, verbose_name=_("OS version"))
+    is_bot = models.BooleanField(default=False, verbose_name=_("bot"))
+    is_mobile = models.BooleanField(default=False, verbose_name=_("mobile"))
+    is_pc = models.BooleanField(default=False, verbose_name=_("PC"))
+    is_tablet = models.BooleanField(default=False, verbose_name=_("tablet"))
+    is_touch_capable = models.BooleanField(default=False, verbose_name=_("touch capable"))
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["browser_family", "os_family", "browser_version", "os_version"]
+
+    def __unicode__(self):
+        return "{browser} {version}".format(browser=self.browser_family, version=self.browser_version)
+
+
+class URLTracking(models.Model):
+    """
+    This model will store records of visits to URLs
+    if URL tracking is enabled on the model.
+    """
+
+    url = models.ForeignKey(WeenyURL)
+    weeny_site = models.ForeignKey(WeenySite)
+    weeny_url = models.CharField(max_length=255)
+    target_url = models.CharField(max_length=255)
+    ip_address = models.IPAddressField()
+    user_agent = models.ForeignKey(UserAgent)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = verbose_name = "URL tracking"
+        ordering = ["weeny_url", "weeny_site__site", "timestamp", "user_agent"]
+
+    def __unicode__(self):
+        return "{weeny_url} - {ip_address}".format(weeny_url=self.weeny_url, ip_address=self.ip_address)
 
 
 @receiver(signals.post_save, sender=WeenyURL)
@@ -123,4 +202,36 @@ def post_save_callback(sender, instance, **kwargs):
     # firing the post_save signal again (which will lead to an infinity loop).
     sender.objects.filter(pk=instance.pk).update(urlcode=code)
 
+@receiver(track_visit, sender=WeenyURL)
+def track_visit_callback(sender, instance, request, **kwargs):
+    """
+    Create URL tracking records!
+    """
 
+    user_agent = ua_parse(request.META["HTTP_USER_AGENT"])
+    user_agent_obj, created = UserAgent.objects.get_or_create(ua_string=user_agent.ua_string, defaults={
+        "ua_string": user_agent.ua_string,
+        "browser_family": user_agent.browser.family,
+        "browser_version": user_agent.browser.version_string,
+        "device_family": user_agent.device.family,
+        "os_family": user_agent.os.family,
+        "os_version": user_agent.os.version_string,
+        "is_bot": user_agent.is_bot,
+        "is_mobile": user_agent.is_mobile,
+        "is_pc": user_agent.is_pc,
+        "is_tablet": user_agent.is_tablet,
+        "is_touch_capable": user_agent.is_touch_capable
+    })
+
+    if created:
+        # TODO: log this action
+        pass
+
+    URLTracking.objects.create(**{
+        "url": instance,
+        "weeny_site": instance.weeny_site,
+        "weeny_url": instance.get_absolute_url(),
+        "target_url": instance.redirect_url,
+        "ip_address": request.META["REMOTE_ADDR"],
+        "user_agent": user_agent_obj
+    })

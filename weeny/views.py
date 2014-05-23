@@ -7,9 +7,10 @@ from django.views.generic import RedirectView
 from django.views.generic.detail import SingleObjectMixin
 
 from weeny.models import WeenyURL
+from weeny.signals import track_visit
 
 
-class WeenyURLView(SingleObjectMixin, RedirectView):
+class URLRedirectView(SingleObjectMixin, RedirectView):
     """
     A View which redirects to the objects `get_absolute_url`.
     """
@@ -20,21 +21,21 @@ class WeenyURLView(SingleObjectMixin, RedirectView):
     slug_url_kwarg = "urlcode"
 
     def get_queryset(self):
-        return super(WeenyURLView, self).get_queryset().filter(weeny_site__site=get_current_site(self.request))
+        return super(URLRedirectView, self).get_queryset().filter(weeny_site__site=get_current_site(self.request))
 
     def get_redirect_url(self, *args, **kwargs):
         """
         Return the URL to redirect to.
         """
         self.object = self.get_object()
-        try:
-            url = self.object.redirect_url
-        except AttributeError as e:
-            # If for some reason the user has managed to create a
-            # WeenyURL for an object which has not `get_absolute_url`
-            # it will raise an AttributeError. Log, and carry on!
-            # TODO: Log this!
+
+        if not self.object.is_active or self.object.is_visited and not self.object.allow_revisit:
             return None
 
-        return url
+        if self.object.weeny_site.track or self.object.track:
+            track_visit.send(sender=self.object.__class__, instance=self.object, request=self.request)
+
+        self.object.is_visited = True
+        self.object.save()
+        return self.object.redirect_url
 
