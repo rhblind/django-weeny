@@ -7,7 +7,8 @@ from weeny.models import WeenySite, WeenyURL, URLTracking, UserAgent
 
 class WeenySiteAdmin(admin.ModelAdmin):
     readonly_fields = ["seed"]
-    list_display = ["short_domain", "site", "track", "seed", "created"]
+    list_display = ["short_domain", "site", "track", "redirect_short_domain",
+                    "requires_moderation", "seed", "created"]
 
 
 class WeenyURLAdmin(admin.ModelAdmin):

@@ -40,7 +40,11 @@ class WeenySite(models.Model):
 
     site = models.ForeignKey(Site)
     short_domain = models.CharField(verbose_name=_("short domain name"), max_length=50)
+    redirect_short_domain = models.BooleanField(default=False, help_text=_("Check to make URL's for this site "
+                                                                           "redirect to the short domain."))
     protocol = models.CharField(max_length=10, choices=TRANSFER_PROTOCOL, default="https")
+    requires_moderation = models.BooleanField(default=False, help_text=_("Check to require URL's for this site to "
+                                                                         "be moderated before being usable."))
     track = models.BooleanField(default=False, help_text=_("Track all URL's for this site."))
     seed = models.CharField(max_length=62, blank=True, db_index=True, unique=True)
     created = models.DateTimeField(auto_now_add=True, verbose_name=_("date/time created"))
@@ -50,7 +54,7 @@ class WeenySite(models.Model):
         unique_together = ["site", "short_domain"]
 
     def __unicode__(self):
-        return self.short_domain
+        return "{0} - {1}".format(self.short_domain, self.site.domain)
 
     def save(self, *args, **kwargs):
         if not self.seed:
@@ -82,14 +86,19 @@ class WeenyURL(models.Model):
     is_visited = models.BooleanField(default=False, verbose_name=_("visited"))
     is_private = models.BooleanField(default=False, verbose_name=_("private URL"),
                                      help_text=_("Check this if you want the URL to be password protected."))
+    is_removed = models.BooleanField(default=False, verbose_name=_("removed"),
+                                     help_text=_("Check this box if the URL should be considered removed. "
+                                                 "A `This URL has been removed` message will be displayed instead."))
     password = models.CharField(max_length=128, blank=True, null=True,
-                                help_text=_("Only required if private URL."))
+                                help_text=_("Only required if private URL. This password is stored encrypted and there "
+                                            "is no way of retrieving it. Keep that in mind =)"))
     created = models.DateTimeField(auto_now_add=True, verbose_name=_("date/time created"))
     modified = models.DateTimeField(auto_now=True, verbose_name=_("date/time modified"))
 
     class Meta:
         ordering = ["weeny_site"]
         unique_together = ["weeny_site", "urlcode"]
+        permissions = [("can_moderate", "Can moderate Weeny URL's")]
 
     def __unicode__(self):
         return "{obj} - {code}".format(obj=self.content_object, code=self.urlcode)
@@ -102,7 +111,8 @@ class WeenyURL(models.Model):
     def redirect_url(self):
         return "{protocol}://{domain}{uri}".format(
             protocol=self.weeny_site.protocol,
-            domain=self.weeny_site.site.domain,
+            domain=self.weeny_site.short_domain if self.weeny_site.redirect_short_domain
+                else self.weeny_site.site.domain,
             uri=self.content_object.get_absolute_url()
         )
 
