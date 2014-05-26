@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from ez_setup import use_setuptools
 from setuptools import setup
 
-use_setuptools()
+import ez_setup
+ez_setup.use_setuptools()
+
 
 setup(
     name="django-weeny",
-    version="1.0.1-beta",
+    version="1.0.1",
     url="https://bitbucket.org/mootacom/django-weeny",
     download_url="https://rhblind@bitbucket.org/mootacom/django-weeny.git",
-    license=open("LICENSE.rst", "r").read(),
+    license="Apache Software License",
     author="Rolf Håvard Blindheim",
     author_email="rhblind@gmail.com",
-    description="Small URL shortner app for django.",
+    description="Small and simple URL shortener app for Django.",
     long_description=open("README.rst", "r").read(),
     packages=[
         "weeny",
@@ -29,6 +30,7 @@ setup(
         "ua-parser",
         "user-agents"
     ],
+    py_modules=["ez_setup"],
     classifiers=[
         "Operating System :: OS Independent",
         "Development Status :: 4 - Beta",
