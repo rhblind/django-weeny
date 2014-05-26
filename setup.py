@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from distutils.core import setup
+from ez_setup import use_setuptools
+from setuptools import setup
 
+use_setuptools()
 
 setup(
     name="django-weeny",
@@ -19,14 +21,14 @@ setup(
         "weeny.migrations",
         "weeny.tests"
     ],
-    package_data={
-        "weeny": [
-            "locale/*/*",
-            "static/weeny/img/*",
-            "static/weeny/css/*.css",
-            "templates/weeny/*.html"
-        ]
-    },
+    include_package_data=True,
+    install_requires=[
+        "Django>=1.5.0",
+        "PyYAML",
+        "South",
+        "ua-parser",
+        "user-agents"
+    ],
     classifiers=[
         "Operating System :: OS Independent",
         "Development Status :: 3 - Alpha",
