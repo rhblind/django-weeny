@@ -1,9 +1,8 @@
-Django==1.6.5
-PyYAML==3.11
-South==0.8.4
-Sphinx==1.2.2
-gnureadline==6.3.3
-six==1.6.1
-sphinx-rtd-theme==0.1.6
-ua-parser==0.3.5
-user-agents==0.2.0
+Django>=1.5.0
+PyYAML
+South
+Sphinx
+gnureadline
+six
+ua-parser
+user-agents
