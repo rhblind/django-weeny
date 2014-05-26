@@ -16,6 +16,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
+from weeny import logger
 from weeny.signals import track_visit
 
 # A constant holding all base62 valid digits
@@ -66,12 +67,6 @@ class WeenyURL(models.Model):
     any model. Requires that the `content_object` to have a
     `get_absolute_url` method implemented.
     """
-    MODERATION = (
-        ("approved", "Approved"),
-        ("banned", "Banned"),
-        ("pending", "Pending"),
-        ("refused", "Refused")
-    )
 
     content_type = models.ForeignKey(ContentType, verbose_name=_("content type"),
                                      related_name="contenttype_set_for_%(class)s")
@@ -224,8 +219,15 @@ def track_visit_callback(sender, instance, request, **kwargs):
     })
 
     if created:
-        # TODO: log this action
-        pass
+        logger.info(
+            "Created new UserAgent {browser_family} - {browser_version} "
+            "({os_family} - {os_version}).".format(
+                browser_family=user_agent_obj.browser_family,
+                browser_version=user_agent_obj.browser_version,
+                os_family=user_agent_obj.os_family,
+                os_version=user_agent_obj.os_version
+            )
+        )
 
     URLTracking.objects.create(**{
         "url": instance,

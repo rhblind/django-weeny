@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.views.generic import RedirectView, FormView
 from django.views.generic.detail import SingleObjectMixin
 
+from weeny import logger
 from weeny.models import WeenyURL
 from weeny.forms.auth import AuthenticateForm
 from weeny.signals import track_visit
@@ -43,11 +44,11 @@ class URLRedirectView(SingleObjectMixin, FormView, RedirectView):
                 else:
                     return http.HttpResponseRedirect(url)
             else:
-                # logger.warning('Gone: %s', self.request.path,
-                #                extra={
-                #                    'status_code': 410,
-                #                    'request': self.request
-                #                })
+                logger.warning("Gone: %s", self.request.path,
+                               extra={
+                                   "status_code": 410,
+                                   "request": self.request
+                               })
                 return http.HttpResponseGone()
 
     def get_form_kwargs(self):
