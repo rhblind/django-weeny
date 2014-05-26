@@ -1,0 +1,24 @@
+{% load i18n %}
+{% load static from staticfiles %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% trans "Please authenticate!" %}{% endblock %}</title>
+    <link href="{% static "weeny/css/weeny.css" %}" rel="stylesheet" />
+</head>
+<body>
+<form method="post" id="weeny-auth-form" action=".">{% csrf_token %}
+    <fieldset>
+        <div class="fieldset-row">
+            <label for="id_password">{% trans "This URL requires password authentication" %}</label>
+            <input id="id_password" type="password" name="password" maxlength="255"
+                    placeholder="{% trans "Enter password" %}">
+            {{ form.password.errors }}
+        </div>
+        <div class="fieldset-row">
+            <input id="weeny-auth-form-submit" type="submit" value="{% trans "Submit" %}">
+        </div>
+    </fieldset>
+</form>
+</body>
+</html>

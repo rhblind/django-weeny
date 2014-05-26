@@ -1,0 +1,74 @@
+
+body {
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+    font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
+    color: #333;
+    background: #eee;
+}
+
+#weeny-auth-form fieldset {
+    background: #fff;
+    border: 1px solid #ccc;
+    width: 28rem;
+    min-width: 300px;
+    margin: 100px auto;
+}
+
+#weeny-auth-form fieldset .fieldset-row {
+    padding: 1rem 0;
+    float: left;
+    width: 100%;
+}
+
+#weeny-auth-form fieldset .fieldset-row label {
+    padding-right: 0.5rem;
+    line-height: 2rem;
+    font-size: 1rem;
+    clear: both;
+    color: #333;
+}
+
+#weeny-auth-form fieldset .fieldset-row #id_password {
+    clear: both;
+    padding: 6px;
+    width: 100%;
+    font-size: 1rem;
+    text-align: center;
+    -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
+}
+
+#weeny-auth-form fieldset input[type="submit"] {
+    margin: 0 auto;
+    display: block;
+    color: black;
+    text-align:center;
+    background: white url(../img/nav-bg.gif) bottom repeat-x;
+    padding: 3px 5px;
+    border: 1px solid;
+    border-color: #ddd #aaa #aaa #ddd;
+    height: 1.5rem;
+    min-width: 3.5rem;
+}
+
+#weeny-auth-form fieldset input[type="submit"]:active {
+    background: url(../img/nav-bg-reverse.gif) top;
+}
+
+ul.errorlist {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.errorlist li {
+    font-size: 12px !important;
+    display: block;
+    padding: 4px 5px 4px 25px;
+    margin: 0 0 3px 0;
+    border: 1px solid red;
+    color: white;
+    background: red url(../img/icon_alert.gif) 5px .3em no-repeat;
+}

@@ -1,6 +1,12 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+
+from django.conf import settings
+from django.contrib import admin
 from django.conf.urls import patterns, include, url
 
-from django.contrib import admin
+
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -11,3 +17,7 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     url(r'^weeny/', include("weeny.urls"))
 )
+
+if settings.DEBUG is True:
+    from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+    urlpatterns += staticfiles_urlpatterns()

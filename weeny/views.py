@@ -2,33 +2,64 @@
 
 from __future__ import unicode_literals
 
+from django import http
 from django.contrib.sites.models import get_current_site
-from django.views.generic import RedirectView
+from django.core.urlresolvers import reverse_lazy
+from django.views.generic import RedirectView, FormView
 from django.views.generic.detail import SingleObjectMixin
 
 from weeny.models import WeenyURL
+from weeny.forms.auth import AuthenticateForm
 from weeny.signals import track_visit
 
 
-class URLRedirectView(SingleObjectMixin, RedirectView):
+class URLRedirectView(SingleObjectMixin, FormView, RedirectView):
     """
-    A View which redirects to the objects `get_absolute_url`.
+    Redirects the user to the target URL.
     """
 
     model = WeenyURL
     object = None
     slug_field = "urlcode"
     slug_url_kwarg = "urlcode"
+    form_class = AuthenticateForm
+    authenticate_url = reverse_lazy("weeny_authenticate_view")
+    template_name = "weeny/authenticate.html"
 
-    def get_queryset(self):
-        return super(URLRedirectView, self).get_queryset().filter(weeny_site__site=get_current_site(self.request))
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super(URLRedirectView, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        if self.object.is_private:
+            form_class = self.get_form_class()
+            form = self.get_form(form_class)
+            return self.render_to_response(self.get_context_data(form=form))
+        else:
+            url = self.get_redirect_url(*args, **kwargs)
+            if url:
+                if self.permanent:
+                    return http.HttpResponsePermanentRedirect(url)
+                else:
+                    return http.HttpResponseRedirect(url)
+            else:
+                # logger.warning('Gone: %s', self.request.path,
+                #                extra={
+                #                    'status_code': 410,
+                #                    'request': self.request
+                #                })
+                return http.HttpResponseGone()
+
+    def get_form_kwargs(self):
+        kwargs = super(URLRedirectView, self).get_form_kwargs()
+        kwargs["object"] = self.object
+        return kwargs
+
+    def get_success_url(self):
+        self.success_url = self.get_redirect_url()
+        return super(URLRedirectView, self).get_success_url()
 
     def get_redirect_url(self, *args, **kwargs):
-        """
-        Return the URL to redirect to.
-        """
-        self.object = self.get_object()
-
         if not self.object.is_active or self.object.is_visited and not self.object.allow_revisit:
             return None
 
@@ -39,3 +70,5 @@ class URLRedirectView(SingleObjectMixin, RedirectView):
         self.object.save()
         return self.object.redirect_url
 
+    def get_queryset(self):
+        return super(URLRedirectView, self).get_queryset().filter(weeny_site__site=get_current_site(self.request))
