@@ -15,8 +15,18 @@ setup(
     long_description=open("README.rst", "r").read(),
     packages=[
         "weeny",
+        "weeny.forms",
+        "weeny.migrations",
         "weeny.tests"
     ],
+    package_data={
+        "weeny": [
+            "locale/*/*",
+            "static/weeny/img/*",
+            "static/weeny/css/*.css",
+            "templates/weeny/*.html"
+        ]
+    },
     classifiers=[
         "Operating System :: OS Independent",
         "Development Status :: 3 - Alpha",

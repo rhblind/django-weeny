@@ -1,0 +1,3 @@
+reverse-include weeny/locale * *.mo *.po
+reverse-include weeny/static * *
+reverse-include weeny/templates * *

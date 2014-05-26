@@ -2,6 +2,7 @@
 *.sqlite3
 *.egg-info
 .idea
+MANIFEST
 dist/
 build/
 docs/_build/
