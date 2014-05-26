@@ -18,4 +18,4 @@ Features
 Documentation
 -------------
 
-Read the full documentation `here <http://example.com/nonexistant/>`_
+Read the full documentation `here <http://django-weeny.readthedocs.org/en/latest/>`_
