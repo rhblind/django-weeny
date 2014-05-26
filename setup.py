@@ -7,7 +7,7 @@ use_setuptools()
 
 setup(
     name="django-weeny",
-    version="1.0",
+    version="1.0.1-beta",
     url="https://bitbucket.org/mootacom/django-weeny",
     download_url="https://rhblind@bitbucket.org/mootacom/django-weeny.git",
     license=open("LICENSE.rst", "r").read(),
@@ -31,7 +31,7 @@ setup(
     ],
     classifiers=[
         "Operating System :: OS Independent",
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Environment :: Web Environment",
         "Framework :: Django",
         "Intended Audience :: Developers",
