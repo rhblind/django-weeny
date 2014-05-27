@@ -2,6 +2,7 @@
 *.sqlite3
 *.egg-info
 .idea
+.coverage
 MANIFEST
 dist/
 build/
