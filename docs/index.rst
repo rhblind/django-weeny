@@ -52,6 +52,23 @@ Django-Weeny requires the following django apps to be enabled:
     - `south`
 
 
+Changelog
+=========
+
+v1.0.2
+------
+
+    - Fixed bugs which made it unusable with Django < 1.6
+    - Fixed bugs with installer script
+    - Added some changes for the admin interface
+
+v1.0.1
+------
+
+    - Basic features somewhat in place
+    - Some bugs which made it unusable with Django < 1.6
+
+
 Want to contribute?
 ===================
 
