@@ -1,9 +1,39 @@
 # -*- coding: utf-8 -*-
 
 from django.contrib import admin
+from django.contrib.contenttypes.generic import GenericTabularInline
+
 from weeny.forms.admin import WeenyURLAdminForm
 from weeny.models import WeenySite, WeenyURL, URLTracking, UserAgent
 
+
+#
+# Inlines
+#
+
+class WeenyURLReadOnlyTabularInline(GenericTabularInline):
+    """
+    A read-only tabular inline which can be used to see what
+    WeenyURL's that's available for an object.
+    """
+    model = WeenyURL
+    extra = 0
+    fields = ["weeny_site", "urlcode", "track", "is_active", "is_visited",
+              "allow_revisit", "is_private", "is_removed"]
+
+    def has_add_permission(self, request):
+        return False
+
+    def get_readonly_fields(self, request, obj=None):
+        return list(set(
+            [field.name for field in self.opts.local_fields] +
+            [field.name for field in self.opts.local_many_to_many]
+        ))
+
+
+#
+# Model Admins
+#
 
 class WeenySiteAdmin(admin.ModelAdmin):
     readonly_fields = ["seed"]
