@@ -46,6 +46,7 @@ class WeenyURLAdmin(admin.ModelAdmin):
 
 
 class URLTrackingAdmin(admin.ModelAdmin):
+    readonly_fields = ["timestamp"]
     list_display = ["weeny_url", "target_url", "ip_address", "weeny_site",
                     "user_agent", "timestamp"]
     list_filter = ["weeny_site__site", "weeny_site"]
