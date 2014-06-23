@@ -8,7 +8,7 @@ ez_setup.use_setuptools()
 
 setup(
     name="django-weeny",
-    version="1.0.2",
+    version="1.0.3",
     url="https://bitbucket.org/mootacom/django-weeny",
     download_url="https://rhblind@bitbucket.org/mootacom/django-weeny.git",
     license="Apache Software License",
