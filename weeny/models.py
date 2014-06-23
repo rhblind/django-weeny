@@ -135,7 +135,7 @@ class WeenyURL(models.Model):
 
 class UserAgent(models.Model):
     """
-    Keep track of user agents.
+    Database model for keeping track of browser user agents.
     """
 
     ua_string = models.TextField(verbose_name=_("user agent string"))
@@ -207,10 +207,33 @@ def post_save_callback(sender, instance, **kwargs):
     # firing the post_save signal again (which will lead to an infinity loop).
     sender.objects.filter(pk=instance.pk).update(urlcode=code)
 
+
+@receiver(signals.pre_delete, dispatch_uid="delete_weeny_url")
+def pre_delete_callback(sender, instance, **kwargs):
+    """
+    Whenever an instance is deleted, also delete any WeenyURL's
+    attached to that instance.
+
+    Note: We're skipping WeenyURL instances in order to avvoid
+    too much recursive lookups. If you really want to attach a
+    weeny url to another, please disconnect this signal
+    and override the behaviour.
+    """
+    if not isinstance(instance, WeenyURL):
+        ctype = ContentType.objects.get_for_model(sender)
+        if hasattr(ctype, "contenttype_set_for_weenyurl"):
+            urls = ctype.contenttype_set_for_weenyurl.all()
+            if urls.count():
+                logger.info("Deleting {count} Weeny URL's for {instance}.".format(
+                    count=urls.count(), instance=repr(instance)
+                ))
+                urls.delete()
+
+
 @receiver(track_visit, sender=WeenyURL)
 def track_visit_callback(sender, instance, request, **kwargs):
     """
-    Create URL tracking records!
+    Callback for creating track records for Weeny URL's.
     """
 
     user_agent = ua_parse(request.META["HTTP_USER_AGENT"])
