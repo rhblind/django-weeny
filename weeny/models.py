@@ -222,7 +222,7 @@ def pre_delete_callback(sender, instance, **kwargs):
     if not isinstance(instance, WeenyURL):
         ctype = ContentType.objects.get_for_model(sender)
         if hasattr(ctype, "contenttype_set_for_weenyurl"):
-            urls = ctype.contenttype_set_for_weenyurl.all()
+            urls = ctype.contenttype_set_for_weenyurl.filter(object_id=instance.pk)
             if urls.count():
                 logger.info("Deleting {count} Weeny URL's for {instance}.".format(
                     count=urls.count(), instance=repr(instance)
